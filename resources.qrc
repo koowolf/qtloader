@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/myresources">
+        <file alias="bg.png">images/HelloWorld.png</file>
+        <file alias="downbtn.png">images/b1.png</file>
+    </qresource>
+</RCC>
