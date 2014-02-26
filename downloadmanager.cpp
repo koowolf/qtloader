@@ -66,8 +66,13 @@ void DownloadManager::startDownload(QString strUrl)
 
     if (QFile::exists(fileName)) {        
         if (QMessageBox::question((QWidget *)m_pDelegate, tr("HTTP"), tr("There already exists a file called %1 in "
-                                                       "the current directory. Overwrite?").arg(fileName), QMessageBox::Yes|QMessageBox::No, QMessageBox::No) == QMessageBox::No)
+                                                                         "the current directory. Overwrite?").arg(fileName), QMessageBox::Yes|QMessageBox::No, QMessageBox::No) == QMessageBox::No)
+        {
+            m_pDelegate->refreshStatus("cancel download.");
+            m_pDelegate->hideProgressBar(true);
+            m_pDelegate->enableDownloadBtn();
             return;
+        }
         QFile::remove(fileName);
     }
 
@@ -124,6 +129,8 @@ void DownloadManager::downloadFinished()
                                  tr("Download failed: %1.")
                                  .arg(reply->errorString()));
 
+        m_pDelegate->refreshStatus(tr("Download failed: %1.")
+                                   .arg(reply->errorString()));
         m_pDelegate->enableDownloadBtn();
     } else if (!redirectionTarget.isNull()) {
         QUrl newUrl = url.resolved(redirectionTarget.toUrl());

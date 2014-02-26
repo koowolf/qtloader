@@ -11,6 +11,13 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = qtloader
 TEMPLATE = app
 
+unix:!symbian {
+    DEFINES += PLATFORM_MAC
+}
+
+win32 {
+    DEFINES += PLATFORM_WIN32
+}
 
 SOURCES += main.cpp\
         mainwindow.cpp \

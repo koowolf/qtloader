@@ -35,11 +35,13 @@ private slots:
     void on_downbtn_clicked();
 
 private:
-    void setProperty(QString key, QString value);
-    QString getProperty(QString key, bool bShowWarning = false);
+    void setProperty(QString group, QString key, QString value);
+    QString getProperty(QString group, QString key, bool bShowWarning = false);
 
     bool createDirectory(const char *path);
     bool unCompress(std::string strZipPath, std::string strDstFolder);
+
+    void setEnvironmentVariables();
 
 private:
     Ui::MainWindow *ui;

@@ -208,11 +208,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_sSettingsFile = QApplication::applicationDirPath() + "/download.ini";
 
-//    setProperty("download_url", "https://raw.github.com/koowolf/cjc-test/master/mygtest/folder.zip");
-//    setProperty("destination_file", "F://download.zip");
-//    setProperty("uncompress_destination_folder", "C://folder");
+    setProperty("base", "download_url", "https://raw.github.com/koowolf/cjc-test/master/mygtest/folder.zip");
+    setProperty("base", "destination_file", "F://download.zip");
+    setProperty("base", "uncompress_destination_folder", "C://folder");
+    setProperty("variables", "EXAMPLE", "EXAMPLE_VALUE");
 
-    m_url = getProperty("download_url", true);
+    m_url = getProperty("base", "download_url", true);
     ui->downbtn->setEnabled(m_url != "");
 
     hideProgressBar(true);
@@ -247,12 +248,35 @@ void MainWindow::refreshStatus(QString strText)
 
 QString MainWindow::getDestinationFile()
 {
-    return getProperty("destination_file");
+    return getProperty("base", "destination_file");
 }
+
+
+void MainWindow::setEnvironmentVariables()
+{
+#ifdef PLATFORM_WIN32
+    refreshStatus("write user variables...");
+
+    QSettings settings(m_sSettingsFile, QSettings::IniFormat);
+    settings.beginGroup("variables");
+    foreach (QString key, settings.allKeys())
+    {
+        QString strValue = settings.value(key, "").toString();
+        QSettings reg_settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
+        reg_settings.setValue(key, strValue);
+    }
+    settings.endGroup();
+
+    refreshStatus("write user variables done...");
+#endif
+}
+
 
 void MainWindow::extractZipFile(QString strFilePath)
 {
-    unCompress(strFilePath.toStdString(), getProperty("uncompress_destination_folder").toStdString());
+    unCompress(strFilePath.toStdString(), getProperty("base", "uncompress_destination_folder").toStdString());
+
+    setEnvironmentVariables();
 }
 
 void MainWindow::updateDataReadProgress(qint64 bytesRead, qint64 totalBytes)
@@ -276,16 +300,20 @@ void MainWindow::on_downbtn_clicked()
     m_pMmanager->startDownload(m_url);
 }
 
-void MainWindow::setProperty(QString key, QString value)
+void MainWindow::setProperty(QString group, QString key, QString value)
 {
     QSettings settings(m_sSettingsFile, QSettings::IniFormat);
+    settings.beginGroup(group);
     settings.setValue(key, value);
+    settings.endGroup();
 }
 
-QString MainWindow::getProperty(QString key, bool bShowWarning /*= false*/)
+QString MainWindow::getProperty(QString group, QString key, bool bShowWarning /*= false*/)
 {
     QSettings settings(m_sSettingsFile, QSettings::IniFormat);
+    settings.beginGroup(group);
     QString strValue = settings.value(key, "").toString();
+    settings.endGroup();
     if (strValue == "" && bShowWarning)
         QMessageBox::warning(this, "error", tr("the value of key[%1] in download.ini is empty, please check.").arg(key));
     return strValue;
