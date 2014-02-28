@@ -44,8 +44,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include "zlib.h"
-#include <QtZlib/zlib.h>
+#include "zlib.h"
+//#include <QtZlib/zlib.h>
 
 //namespace cocos2d {
 

@@ -43,6 +43,9 @@ private:
 
     void setEnvironmentVariables();
 
+    QString morphFile (QString s);
+    QString formatString(QString s);
+
 private:
     Ui::MainWindow *ui;
     DownloadManager *m_pMmanager;

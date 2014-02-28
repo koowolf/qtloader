@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QDir>
+#include <string>
 #include "unzip.h"
 using namespace std;
 
@@ -206,14 +207,23 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowFlags(this->windowFlags() & ~Qt::WindowMaximizeButtonHint);
     this->setFixedSize(this->size().width(), this->size().height());
 
-    m_sSettingsFile = QApplication::applicationDirPath() + "/download.ini";
+    std::string path = QApplication::applicationDirPath().toStdString();
+#ifdef PLATFORM_MAC
+    int nPos = path.find("/Contents");
+    if (nPos >= 0){
+        nPos = path.rfind('/', nPos - 1);
+        if (nPos >= 0)
+            path = path.substr(0, nPos);
+    }
+#endif
+    m_sSettingsFile = QString(path.c_str()).append("/download.ini");
 
-    setProperty("base", "download_url", "https://raw.github.com/koowolf/cjc-test/master/mygtest/folder.zip");
-    setProperty("base", "destination_file", "F://download.zip");
-    setProperty("base", "uncompress_destination_folder", "C://folder");
-    setProperty("variables", "EXAMPLE", "EXAMPLE_VALUE");
+//    setProperty("base", "download_url", "https://raw.github.com/koowolf/cjc-test/master/mygtest/folder.zip");
+//    setProperty("base", "destination_file", "/Users/guanyu/download.zip");
+//    setProperty("base", "uncompress_destination_folder", "/Users/guanyu/download");
+//    setProperty("variables", "EXAMPLE", "EXAMPLE_VALUE");
 
-    m_url = getProperty("base", "download_url", true);
+    m_url = formatString(getProperty("base", "download_url", true));
     ui->downbtn->setEnabled(m_url != "");
 
     hideProgressBar(true);
@@ -248,33 +258,72 @@ void MainWindow::refreshStatus(QString strText)
 
 QString MainWindow::getDestinationFile()
 {
-    return getProperty("base", "destination_file");
+    return formatString(getProperty("base", "destination_file"));
 }
 
+QString MainWindow::morphFile (QString s) {
+    if (s.startsWith ("~/"))
+        s.replace (0, 1, QDir::homePath());
+    return s;
+}
+
+QString MainWindow::formatString(QString s)
+{
+    int pos = 0;
+    while ((pos = s.indexOf('\\', pos)) >= 0)
+    {
+        s.replace(pos, 1, "/");
+        pos += 1;
+    }
+    return s;
+}
 
 void MainWindow::setEnvironmentVariables()
 {
-#ifdef PLATFORM_WIN32
+
     refreshStatus("write user variables...");
 
     QSettings settings(m_sSettingsFile, QSettings::IniFormat);
     settings.beginGroup("variables");
+
     foreach (QString key, settings.allKeys())
     {
         QString strValue = settings.value(key, "").toString();
+
+#ifdef PLATFORM_WIN32
+
         QSettings reg_settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
         reg_settings.setValue(key, strValue);
+
+#elif PLATFORM_MAC
+
+        QFile *file = new QFile(morphFile("~/.bash_profile"));
+//        if (!QFile::exists(morphFile("~/.bash_profile")))
+//            cout << "file not exists!";
+        if (file->open(QIODevice::WriteOnly | QIODevice::Append))
+        {
+            QString strLine(tr("\nexport %1=%2").arg(key).arg(strValue));
+            file->write(strLine.toStdString().c_str());
+        }
+        file->flush();
+        file->close();
+        delete file;
+
+#endif
+
     }
     settings.endGroup();
 
     refreshStatus("write user variables done...");
-#endif
+
+
+
 }
 
 
 void MainWindow::extractZipFile(QString strFilePath)
 {
-    unCompress(strFilePath.toStdString(), getProperty("base", "uncompress_destination_folder").toStdString());
+    unCompress(strFilePath.toStdString(), formatString(getProperty("base", "uncompress_destination_folder")).toStdString());
 
     setEnvironmentVariables();
 }

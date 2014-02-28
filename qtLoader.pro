@@ -13,10 +13,13 @@ TEMPLATE = app
 
 unix:!symbian {
     DEFINES += PLATFORM_MAC
+    QMAKE_CXXFLAGS += -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko
+    LIBS += -lz
 }
 
 win32 {
     DEFINES += PLATFORM_WIN32
+    INCLUDEPATH += E:\Qt\Qt5.2.1\5.2.1\msvc2012_64\include\QtZlib
 }
 
 SOURCES += main.cpp\
